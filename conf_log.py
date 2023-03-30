@@ -17,6 +17,7 @@ class TelegramHandler(logging.Handler):
 
 logger_settings = {
     'version': 1,
+    'disable_existing_loggers': False,
     'formatters': {
         'default_formatter': {
             'style': '{',
