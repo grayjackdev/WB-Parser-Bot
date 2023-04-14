@@ -1,8 +1,8 @@
 from aiogram.dispatcher import FSMContext
 from loader import dp, logger
-from aiogram.types import Message
+from aiogram.types import Message, InputFile
 from keyboards import get_info_markup, cancel_markup
-from utils import get_addr, Wildberries
+from utils import get_addr, Wildberries, form_excel
 from filters import IsNumber
 
 
@@ -66,4 +66,20 @@ async def get_max_items(message: Message, state: FSMContext):
     logger.debug(
         f"ID: {user_id} ; Username: @{username} ; Text: Ввел макс. число товаров: {message.text}")
 
-    await state.update_data(max_items=int(message.text))
+    data = await state.get_data()
+    wb = Wildberries(data['latitude'], data['longitude'], data['addr'], data['product'], int(message.text))
+    await state.reset_state()
+    result = await wb.get_geo_info()
+    if result is None:
+        await message.answer(
+            'Произошла ошибка при получение геоданных с WB! Обратитесь к администратору или выберете другое местоположение',
+            reply_markup=get_info_markup)
+        return
+    await wb.get_items()
+    if len(wb.items) == 0:
+        await message.answer('Ничего не найдено по вашему запросу!', reply_markup=get_info_markup)
+    else:
+        buffer_data = form_excel(wb.items)
+        document = InputFile(buffer_data, filename='table.xlsx')
+        await message.answer_document(document, caption='Готово! Лови документ)', reply_markup=get_info_markup)
+

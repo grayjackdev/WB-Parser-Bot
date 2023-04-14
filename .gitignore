@@ -1,9 +1,6 @@
 /venv
-.env
 .idea
 __pycache__
-logs/logs.log
-
 
 
 
